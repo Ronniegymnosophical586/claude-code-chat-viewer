@@ -181,6 +181,29 @@
         margin-inline-end: 6px;
         font-size: 10px;
       }
+      .e .hdr .copy-btn {
+        all: unset;
+        cursor: pointer;
+        padding: 0 5px;
+        margin-inline-start: 6px;
+        border-radius: 3px;
+        font-size: 11px;
+        line-height: 1;
+        opacity: 0.3;
+        transition: opacity 0.12s;
+      }
+      .e:hover .copy-btn {
+        opacity: 0.7;
+      }
+      .e .copy-btn:hover,
+      .e .copy-btn:focus-visible {
+        opacity: 1;
+        background: var(--bg-3);
+      }
+      .e .copy-btn.copied {
+        opacity: 1;
+        color: var(--c-assistant);
+      }
 
       .e.user {
         --bar: var(--c-user);
@@ -441,6 +464,8 @@
           chars: (n) => `${n} chars`,
           systemInject: "system inject",
           readerMode: "Reader mode",
+          copy: "Copy",
+          copied: "Copied!",
           filter: {
             thinking: "Thinking",
             tools: "Tools",
@@ -466,6 +491,8 @@
           chars: (n) => `${n} симв`,
           systemInject: "system inject",
           readerMode: "Режим чтения",
+          copy: "Скопировать",
+          copied: "Скопировано!",
           filter: {
             thinking: "Размышления",
             tools: "Инструменты",
@@ -491,6 +518,8 @@
           chars: (n) => `${n} car.`,
           systemInject: "inyección del sistema",
           readerMode: "Modo lectura",
+          copy: "Copiar",
+          copied: "¡Copiado!",
           filter: {
             thinking: "Pensamiento",
             tools: "Herramientas",
@@ -517,6 +546,8 @@
           chars: (n) => `${n} car.`,
           systemInject: "injection système",
           readerMode: "Mode lecture",
+          copy: "Copier",
+          copied: "Copié !",
           filter: {
             thinking: "Réflexion",
             tools: "Outils",
@@ -542,6 +573,8 @@
           chars: (n) => `${n} 字`,
           systemInject: "系统注入",
           readerMode: "阅读模式",
+          copy: "复制",
+          copied: "已复制!",
           filter: {
             thinking: "思考",
             tools: "工具",
@@ -567,6 +600,8 @@
           chars: (n) => `${n} حرفًا`,
           systemInject: "حقن النظام",
           readerMode: "وضع القراءة",
+          copy: "نسخ",
+          copied: "تم النسخ!",
           filter: {
             thinking: "التفكير",
             tools: "الأدوات",
@@ -850,31 +885,32 @@
 
         if (t === "user") return userEntries(r, ts);
         if (t === "assistant") return assistantEntries(r, ts);
-        if (t === "system")
+        if (t === "system") {
+          const sysText = strContent(r.content);
           return [
             entry(
               "system",
               "system",
               ts,
               r.subtype || "system",
-              `<div class="prose"><pre><code>${esc(strContent(r.content))}</code></pre></div>`,
+              `<div class="prose"><pre><code>${esc(sysText)}</code></pre></div>`,
+              truncSvc(sysText),
             ),
           ];
-        if (t === "attachment")
+        }
+        if (t === "attachment") {
+          const attachText = stringifyBounded(r.attachment || r);
           return [
             entry(
               "ui",
               "attachment",
               ts,
               "📎",
-              svcDetails(
-                "attachment",
-                "json",
-                stringifyBounded(r.attachment || r),
-                "language-json",
-              ),
+              svcDetails("attachment", "json", attachText, "language-json"),
+              truncSvc(attachText),
             ),
           ];
+        }
         // file-history-snapshot / custom-title / agent-name / last-prompt / permission-mode / queue-operation
         return [entry("ui", t, ts, "·", "")];
       }
@@ -923,6 +959,7 @@
                 ts,
                 "💭",
                 svcDetails("thinking", L().chars(b.thinking.length), b.thinking, null, true),
+                truncSvc(b.thinking),
               ),
             );
           } else if (b.type === "tool_use") {
@@ -932,24 +969,78 @@
         return out;
       }
 
-      function entry(kind, who, ts, tag, innerHTML) {
+      // Per-entry raw text for Copy. WeakMap so entries are GC'd when removed from DOM.
+      // Text is always already-truncated (trunc / truncSvc done by callers) — Copy
+      // never deals with megabyte content, so clipboard.writeText stays fast and
+      // neither the site nor the browser can choke on huge payloads.
+      const copyTexts = new WeakMap();
+
+      function entry(kind, who, ts, tag, innerHTML, copyText = null) {
         const el = document.createElement("div");
         el.className = "e " + kind;
         const tagHTML = tag ? `<span class="tag">${esc(tag)}</span>` : "";
         const timeHTML = ts ? `<span>${fmtTime(ts)}</span>` : "";
+        const copyBtn =
+          copyText != null && copyText !== ""
+            ? `<button class="copy-btn" title="${esc(L().copy)}" aria-label="${esc(L().copy)}">📋</button>`
+            : "";
         el.innerHTML =
           `<div class="body">` +
-          `<div class="hdr"><span class="who">${esc(who)}</span>${tagHTML}${timeHTML}</div>` +
+          `<div class="hdr"><span class="who">${esc(who)}</span>${tagHTML}${timeHTML}${copyBtn}</div>` +
           innerHTML +
           `</div>`;
+        if (copyText != null && copyText !== "") copyTexts.set(el, copyText);
         return el;
       }
 
+      async function copyToClipboard(text) {
+        try {
+          await navigator.clipboard.writeText(text);
+          return true;
+        } catch {
+          // Fallback for non-secure contexts (file://) and older browsers.
+          const ta = document.createElement("textarea");
+          ta.value = text;
+          ta.style.position = "fixed";
+          ta.style.top = "-9999px";
+          document.body.appendChild(ta);
+          ta.select();
+          let ok = false;
+          try {
+            ok = document.execCommand("copy");
+          } catch {}
+          document.body.removeChild(ta);
+          return ok;
+        }
+      }
+
+      // Delegated click listener — one for all entries, O(1) memory regardless of count.
+      chatEl.addEventListener("click", async (e) => {
+        const btn = e.target.closest(".copy-btn");
+        if (!btn || !chatEl.contains(btn)) return;
+        e.preventDefault();
+        const entryEl = btn.closest(".e");
+        if (!entryEl) return;
+        const text = copyTexts.get(entryEl);
+        if (!text) return;
+        const ok = await copyToClipboard(text);
+        if (!ok) return;
+        const prev = btn.textContent;
+        btn.textContent = "✓";
+        btn.classList.add("copied");
+        setTimeout(() => {
+          btn.textContent = prev;
+          btn.classList.remove("copied");
+        }, 1200);
+      });
+
       function proseEntry(kind, who, ts, text) {
-        return entry(kind, who, ts, null, `<div class="prose">${md(trunc(text))}</div>`);
+        const shown = trunc(text);
+        return entry(kind, who, ts, null, `<div class="prose">${md(shown)}</div>`, shown);
       }
 
       function metaEntry(text, ts, tag) {
+        const shown = truncSvc(text);
         const html = svcDetails(
           "meta",
           `${L().chars(text.length)} · ${preview(text, 80)}`,
@@ -957,13 +1048,14 @@
           null,
           true,
         );
-        return entry("meta", "inject", ts, tag, html);
+        return entry("meta", "inject", ts, tag, html, shown);
       }
 
       function taskNoteEntry(text, ts) {
         // <task-notification> blob from subagents — shown as service, with markdown inside
+        const shown = truncSvc(text);
         const html = svcDetails("task", preview(text, 90), text, null, true);
-        return entry("task-note", "task", ts, "📣", html);
+        return entry("task-note", "task", ts, "📣", html, shown);
       }
 
       // Known Claude Code tools get friendly label + emoji. Unknown (e.g. MCP tools
@@ -1003,7 +1095,7 @@
             : "";
         const summary = `${esc(friendlyToolName(name))}${hint ? " · " + esc(hint) : ""}`;
         const html = svcDetails("tool-use", summary, inputStr, "language-json");
-        return entry("tool-use", name, ts, "tool", html);
+        return entry("tool-use", name, ts, "tool", html, truncSvc(inputStr));
       }
 
       function toolResultEntry(b, ts) {
@@ -1016,7 +1108,14 @@
         const lineCount = (text.match(/\n/g)?.length ?? 0) + 1;
         const summary = `${err ? "❌" : "📤"} result · ${L().lines(lineCount)} · ${L().chars(text.length)} · ${preview(text, 100)}`;
         const html = svcDetails(err ? "tool-result-err" : "tool-result", summary, text);
-        return entry("tool-result" + (err ? " error" : ""), "result", ts, "result", html);
+        return entry(
+          "tool-result" + (err ? " error" : ""),
+          "result",
+          ts,
+          "result",
+          html,
+          truncSvc(text),
+        );
       }
 
       // summaryRaw is pre-built HTML; callers must escape untrusted pieces.
