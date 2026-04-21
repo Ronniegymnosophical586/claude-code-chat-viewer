@@ -63,14 +63,28 @@ donde `<project-slug>` es tu directorio de trabajo con `/` reemplazado por `-`. 
 
 ## Características
 
-- **Tema claro / oscuro** — botón en la cabecera, la preferencia se guarda en `localStorage`.
+### Cómo cargar un archivo
+
+- **Selector de archivo** — pulsa «Elegir archivo» y selecciona un `.jsonl`.
+- **Arrastrar y soltar** — suelta un archivo en cualquier parte de la página. Un borde punteado indica la zona. Las carpetas y arrastres que no sean archivos se rechazan con un mensaje.
+- **Probar con ejemplo** — en el estado inicial (al usar en línea) aparece un botón que carga un `demo.jsonl` incorporado con todos los tipos de bloque.
+
+### Comodidad de lectura
+
+- **Modo lectura** — botón en la cabecera que oculta todo excepto los mensajes reales del usuario y el texto del asistente. Sin thinking, sin llamadas a herramientas, sin registros de servicio.
+- **Copiar por mensaje** — botón `📋` en la cabecera de cada entrada. Copia el texto al portapapeles con confirmación `✓` durante 1.2 s. Usa `navigator.clipboard.writeText` con fallback a `document.execCommand` para contextos `file://`.
+- **Nombres amigables para herramientas** — las herramientas conocidas reciben iconos (p. ej. `📖 Read file`, `🖥️ Shell`, `📝 Edit file`). Herramientas desconocidas / MCP → `🔧 {raw_name}`.
+- **Tema automático** — el visor sigue el `prefers-color-scheme` del sistema por defecto. Pulsa el botón sol/luna para fijar una elección; la elección fijada persiste entre sesiones.
 - **Seis idiomas de interfaz** — English, Русский, Español, Français, 中文, العربية. El árabe cambia a RTL. Selector en la cabecera, preferencia guardada.
+
+### Rendimiento y seguridad
+
 - **Parseo en streaming** — `.jsonl` se lee vía `file.stream()` + `TextDecoderStream`, no se carga como una sola cadena.
 - **Virtualización nativa** — `content-visibility: auto` en cada registro: el navegador omite layout y paint para entradas fuera de pantalla. Escala a miles de registros.
 - **Renderizado por lotes** — 500 registros por lote, botón «Mostrar más» para el resto.
 - **Filtros** — cinco casillas (thinking / tools / results / system / ui-state), alternan categorías vía una sola clase CSS en el contenedor (sin reflow del DOM).
-- **Renderizado seguro frente a XSS** — cada bloque de texto se escapa _antes_ de pasar por el parser de markdown. Ningún HTML crudo de la transcripción llega al DOM, por lo que no se necesita sanitizador en tiempo de ejecución.
-- **Límites de tamaño** — bloques de prosa truncados a 20 KB, bloques de servicio a 5 KB (suelen llevar 10-50 KB de ruido que nadie lee). La serialización también está acotada — entradas de herramientas grandes no se materializan enteras antes del recorte.
+- **Renderizado seguro frente a XSS** — cada bloque de texto se escapa _antes_ de pasar por el parser de markdown. Las imágenes Markdown se neutralizan (texto inerte, nunca se descargan). Los enlaces se limitan a `http(s)` con `rel="noopener noreferrer nofollow"`.
+- **Límites de tamaño** — bloques de prosa truncados a 20 KB, bloques de servicio a 5 KB. Las operaciones de copia heredan estos límites — la página nunca envía megabytes al portapapeles y no puede colgar el navegador.
 - **Fallback para `.json`** — si el archivo no es JSONL sino un array/objeto JSON plano, se interpreta como lista de registros.
 
 ## Requisitos del navegador

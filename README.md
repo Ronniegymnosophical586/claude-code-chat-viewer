@@ -63,14 +63,28 @@ where `<project-slug>` is your working directory with `/` replaced by `-`. Examp
 
 ## Features
 
-- **Light / dark theme** — toggle button in the header, preference saved in `localStorage`.
+### Ways to load a file
+
+- **File picker** — click "Choose file" and pick a `.jsonl`.
+- **Drag and drop** — drop a file anywhere on the page. A dashed outline signals the drop zone. Folder drops and non-file drags are rejected cleanly.
+- **Try with example** — on the empty state (when hosted online) there's a button that loads a bundled `demo.jsonl` showcasing all entry types.
+
+### Reading comfort
+
+- **Reader mode** — a header toggle that hides everything except real user messages and assistant text replies. No thinking, no tool calls, no service records. Good for skimming or sharing a clean view.
+- **Copy per message** — `📋` button in each entry header. Copies the entry's text to the clipboard, with a checkmark confirmation for 1.2 s. Uses `navigator.clipboard.writeText` with a `document.execCommand` fallback for `file://` contexts.
+- **Friendly tool names** — known tools are labelled with icons (e.g. `📖 Read file`, `🖥️ Shell`, `📝 Edit file`). Unknown / MCP tools fall back to `🔧 {raw_name}`.
+- **Auto theme** — the viewer follows your system's `prefers-color-scheme` by default. Click the sun/moon button to pin a choice; pinned choice persists across sessions.
 - **Six UI languages** — English, Русский, Español, Français, 中文, العربية. Arabic switches to RTL. Picker in the header, preference saved.
+
+### Performance & safety
+
 - **Streaming parse** — `.jsonl` is read via `file.stream()` + `TextDecoderStream`, not loaded as a single string.
 - **Native virtualization** — `content-visibility: auto` on each record: the browser skips layout and paint for off-screen entries. Scales to thousands of records.
 - **Chunked rendering** — 500 records per chunk, "Load more" button for the rest.
 - **Filters** — five checkboxes (thinking / tools / results / system / ui-state), toggle categories via a single CSS class on the container (no DOM reflow).
-- **XSS-safe rendering** — every text block is HTML-escaped _before_ markdown parsing. No raw HTML from the transcript ever reaches the DOM, so no DOM sanitizer is needed at runtime.
-- **Size caps** — prose blocks truncated at 20 KB, service blocks at 5 KB (these usually carry 10-50 KB of noise nobody reads). Stringification is also bounded — big tool inputs don't get fully materialized before they're cut.
+- **XSS-safe rendering** — every text block is HTML-escaped _before_ markdown parsing. No raw HTML from the transcript ever reaches the DOM, so no DOM sanitizer is needed at runtime. Markdown images are neutralized (shown as inert text, never fetched). Links are restricted to `http(s)` and opened with `rel="noopener noreferrer nofollow"`.
+- **Size caps** — prose blocks truncated at 20 KB, service blocks at 5 KB. Copy and clipboard operations inherit these caps — the page never ships megabytes of text and cannot stall the browser.
 - **`.json` fallback** — if the file isn't JSONL but a plain JSON array/object, it's parsed as a list of records.
 
 ## Browser requirements

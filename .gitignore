@@ -1,5 +1,6 @@
 *.jsonl
 *.json
+!demo.jsonl
 !package.json
 
 node_modules/

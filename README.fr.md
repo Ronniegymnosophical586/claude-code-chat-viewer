@@ -63,14 +63,28 @@ où `<project-slug>` est votre répertoire de travail avec `/` remplacé par `-`
 
 ## Fonctionnalités
 
-- **Thème clair / sombre** — bouton dans l'en-tête, préférence sauvegardée dans `localStorage`.
-- **Six langues d'interface** — English, Русский, Español, Français, 中文, العربية. L'arabe bascule automatiquement en RTL. Sélecteur dans l'en-tête, préférence sauvegardée.
+### Comment charger un fichier
+
+- **Sélecteur de fichier** — cliquez sur « Choisir un fichier » et sélectionnez un `.jsonl`.
+- **Glisser-déposer** — déposez un fichier n'importe où sur la page. Un contour pointillé signale la zone. Les dossiers et les glissers non-fichiers sont rejetés proprement.
+- **Essayer avec l'exemple** — dans l'état initial (utilisation en ligne), un bouton apparaît qui charge un `demo.jsonl` intégré montrant tous les types de blocs.
+
+### Confort de lecture
+
+- **Mode lecture** — bouton dans l'en-tête qui masque tout sauf les messages réels de l'utilisateur et les réponses textuelles de l'assistant. Pas de thinking, pas d'appels d'outils, pas d'enregistrements de service.
+- **Copier par message** — bouton `📋` dans l'en-tête de chaque entrée. Copie le texte dans le presse-papiers avec une confirmation `✓` pendant 1.2 s. Utilise `navigator.clipboard.writeText` avec un fallback `document.execCommand` pour les contextes `file://`.
+- **Noms d'outils conviviaux** — les outils connus reçoivent des icônes (par ex. `📖 Read file`, `🖥️ Shell`, `📝 Edit file`). Outils inconnus / MCP → `🔧 {raw_name}`.
+- **Thème automatique** — la visionneuse suit le `prefers-color-scheme` du système par défaut. Cliquez sur le bouton soleil/lune pour épingler un choix ; le choix épinglé persiste entre les sessions.
+- **Six langues d'interface** — English, Русский, Español, Français, 中文, العربية. L'arabe bascule en RTL. Sélecteur dans l'en-tête, préférence sauvegardée.
+
+### Performance et sécurité
+
 - **Analyse en streaming** — `.jsonl` est lu via `file.stream()` + `TextDecoderStream`, pas chargé comme une seule chaîne.
 - **Virtualisation native** — `content-visibility: auto` sur chaque enregistrement : le navigateur ignore layout et paint pour les entrées hors écran. Tient la charge sur des milliers d'enregistrements.
 - **Rendu par lots** — 500 enregistrements par lot, bouton « Afficher plus » pour le reste.
 - **Filtres** — cinq cases à cocher (thinking / tools / results / system / ui-state), activent/désactivent les catégories via une seule classe CSS sur le conteneur (pas de reflow du DOM).
-- **Rendu sûr contre XSS** — chaque bloc de texte est échappé _avant_ le parseur markdown. Aucun HTML brut de la transcription n'atteint le DOM, donc aucun assainisseur runtime n'est nécessaire.
-- **Plafonds de taille** — blocs de prose tronqués à 20 Ko, blocs de service à 5 Ko (ils portent typiquement 10-50 Ko de contenu que personne ne lit). La sérialisation est aussi bornée — les gros inputs d'outils ne sont pas entièrement matérialisés avant la troncature.
+- **Rendu sûr contre XSS** — chaque bloc de texte est échappé _avant_ le parseur markdown. Les images Markdown sont neutralisées (texte inerte, jamais récupérées). Les liens sont limités à `http(s)` avec `rel="noopener noreferrer nofollow"`.
+- **Plafonds de taille** — blocs de prose tronqués à 20 Ko, blocs de service à 5 Ko. Les opérations de copie héritent de ces plafonds — la page n'envoie jamais des mégaoctets au presse-papiers et ne peut pas faire planter le navigateur.
 - **Fallback pour `.json`** — si le fichier n'est pas du JSONL mais un tableau/objet JSON simple, il est parsé comme une liste d'enregistrements.
 
 ## Prérequis navigateur

@@ -366,6 +366,22 @@
         border-color: var(--accent);
         color: var(--accent);
       }
+      .demo-btn {
+        background: var(--bg-3);
+        border: 1px solid var(--border);
+        color: var(--text);
+        padding: 8px 18px;
+        border-radius: 8px;
+        cursor: pointer;
+        font: inherit;
+        font-size: 14px;
+      }
+      .demo-btn:hover,
+      .demo-btn:focus-visible {
+        border-color: var(--accent);
+        color: var(--accent);
+        outline: none;
+      }
 
       body.drag-active #chat {
         outline: 3px dashed var(--accent);
@@ -474,6 +490,7 @@
           readerMode: "Reader mode",
           copy: "Copy",
           copied: "Copied!",
+          tryExample: "Try with example",
           filter: {
             thinking: "Thinking",
             tools: "Tools",
@@ -501,6 +518,7 @@
           readerMode: "Режим чтения",
           copy: "Скопировать",
           copied: "Скопировано!",
+          tryExample: "Открыть пример",
           filter: {
             thinking: "Размышления",
             tools: "Инструменты",
@@ -528,6 +546,7 @@
           readerMode: "Modo lectura",
           copy: "Copiar",
           copied: "¡Copiado!",
+          tryExample: "Probar con ejemplo",
           filter: {
             thinking: "Pensamiento",
             tools: "Herramientas",
@@ -556,6 +575,7 @@
           readerMode: "Mode lecture",
           copy: "Copier",
           copied: "Copié !",
+          tryExample: "Essayer avec l'exemple",
           filter: {
             thinking: "Réflexion",
             tools: "Outils",
@@ -583,6 +603,7 @@
           readerMode: "阅读模式",
           copy: "复制",
           copied: "已复制!",
+          tryExample: "试用示例",
           filter: {
             thinking: "思考",
             tools: "工具",
@@ -610,6 +631,7 @@
           readerMode: "وضع القراءة",
           copy: "نسخ",
           copied: "تم النسخ!",
+          tryExample: "جرّب مثالاً",
           filter: {
             thinking: "التفكير",
             tools: "الأدوات",
@@ -1166,11 +1188,42 @@
         for (const k of FILTERS) chatEl.classList.toggle("hide-" + k, !fbox[k].checked);
       }
 
+      // Demo loader — only makes sense when the page is served over HTTP(S). On
+      // file:// fetch() is blocked by browsers for security; we hide the button
+      // rather than showing it and failing on click.
+      const canLoadDemo = /^https?:$/.test(window.location.protocol);
+
+      async function loadDemo() {
+        statsEl.textContent = "";
+        chatEl.innerHTML = `<div class="empty">${L().reading}</div>`;
+        try {
+          const res = await fetch("demo.jsonl");
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          const text = await res.text();
+          const rows = [];
+          for (const ln of text.split("\n")) {
+            if (!ln.trim()) continue;
+            try {
+              rows.push(JSON.parse(ln));
+            } catch {}
+          }
+          render(rows, "demo.jsonl");
+        } catch (err) {
+          chatEl.innerHTML = `<div class="empty">${L().errRead} ${esc(err.message)}</div>`;
+        }
+      }
+
       function renderEmptyState() {
+        const demoBtn = canLoadDemo
+          ? `<br><br><button type="button" id="demo-btn" class="demo-btn">▶ ${esc(L().tryExample)}</button>`
+          : "";
         emptyEl.innerHTML =
           `${L().pick} <span class="kbd">.jsonl</span> ${L().transcriptHint} ` +
           `<i>${L().dropHint}</i>.<br>` +
-          `${L().usuallyAt} <code>~/.claude/projects/&lt;project&gt;/&lt;session-uuid&gt;.jsonl</code>`;
+          `${L().usuallyAt} <code>~/.claude/projects/&lt;project&gt;/&lt;session-uuid&gt;.jsonl</code>` +
+          demoBtn;
+        const btn = document.getElementById("demo-btn");
+        if (btn) btn.addEventListener("click", loadDemo);
       }
 
       function renderFilterLabels() {
