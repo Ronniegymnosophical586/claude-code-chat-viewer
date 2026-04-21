@@ -91,7 +91,7 @@ Pas de CDN, pas de réseau, pas de Subresource Integrity. Clonez et lancez.
 
 ## Vie privée
 
-Tout fonctionne localement dans votre navigateur. La visionneuse n'effectue **aucune** requête réseau — pas de CDN, pas d'analytics, pas de polices distantes. Vos transcriptions restent sur votre machine.
+Tout fonctionne localement dans votre navigateur. La visionneuse elle-même **n'effectue aucune requête réseau automatique** — pas de CDN, pas d'analytics, pas de polices distantes. Les images Markdown incorporées dans les transcriptions sont neutralisées : affichées comme texte inerte avec l'URL visible, mais jamais récupérées. Les liens externes (uniquement `http(s)`) ne s'ouvrent dans un nouvel onglet que lorsque vous cliquez dessus, avec `rel="noopener noreferrer nofollow"`. Vos transcriptions restent sur votre machine.
 
 ## Limitations connues
 

@@ -345,6 +345,18 @@
         color: var(--accent);
       }
 
+      /* Neutralized markdown image: no auto-fetch, just an inert label with URL */
+      .md-image {
+        display: inline-block;
+        color: var(--muted);
+        font-style: italic;
+      }
+      .md-image-url {
+        font-family: ui-monospace, "SF Mono", Menlo, monospace;
+        font-size: 0.9em;
+        opacity: 0.8;
+      }
+
       main.hide-thinking .e.thinking {
         display: none;
       }
@@ -563,7 +575,23 @@
         ar: "ar-EG",
       };
 
-      const savedLang = localStorage.getItem("lang");
+      // localStorage can throw in strict privacy modes / third-party iframe contexts.
+      const storage = {
+        get(k) {
+          try {
+            return localStorage.getItem(k);
+          } catch {
+            return null;
+          }
+        },
+        set(k, v) {
+          try {
+            localStorage.setItem(k, v);
+          } catch {}
+        },
+      };
+
+      const savedLang = storage.get("lang");
       const browserLang = (navigator.language || "en").toLowerCase().split("-")[0];
       let locale = savedLang || (I18N[browserLang] ? browserLang : "en");
       const L = () => I18N[locale];
@@ -592,7 +620,23 @@
       const fbox = Object.fromEntries(FILTERS.map((k) => [k, document.getElementById("f-" + k)]));
       Object.values(fbox).forEach((el) => el.addEventListener("change", applyFilters));
 
-      marked.setOptions({ breaks: true, gfm: true });
+      // Privacy: neutralize markdown images (no auto-fetch) and restrict link schemes.
+      // Without this, [text](...) and ![alt](...) in transcripts would fetch remote
+      // resources on render and leak viewer usage to whoever crafted the transcript.
+      const mdRenderer = new marked.Renderer();
+      mdRenderer.image = function (href, title, text) {
+        const alt = esc(text || "image");
+        const url = href ? ` <span class="md-image-url">${esc(href)}</span>` : "";
+        return `<span class="md-image">🖼️ ${alt}${url}</span>`;
+      };
+      mdRenderer.link = function (href, title, text) {
+        // Only http(s) links are clickable; other schemes (javascript:, data:, file:, mailto:)
+        // are rendered as plain text. `text` is already escaped/rendered by marked.
+        if (!href || !/^https?:\/\//i.test(href)) return text;
+        const t = title ? ` title="${esc(title)}"` : "";
+        return `<a href="${esc(href)}" rel="noopener noreferrer nofollow" target="_blank"${t}>${text}</a>`;
+      };
+      marked.setOptions({ renderer: mdRenderer, breaks: true, gfm: true });
 
       // ===== truncation =====
       const MAX_PROSE = 20_000;
@@ -620,6 +664,9 @@
 
       // ===== file loading =====
       async function loadFile(f) {
+        // Clear stale stats from a previous file — on error the old stats row
+        // would otherwise stay above the new error message and mislead the user.
+        statsEl.textContent = "";
         chatEl.innerHTML = `<div class="empty">${L().reading}</div>`;
         try {
           const rows = await parseFile(f);
@@ -990,7 +1037,7 @@
       langSel.value = locale;
       langSel.addEventListener("change", () => {
         locale = langSel.value;
-        localStorage.setItem("lang", locale);
+        storage.set("lang", locale);
         applyLocale();
         renderFilterLabels();
         if (state.rows.length) render(state.rows, state.fname);
@@ -999,12 +1046,12 @@
 
       themeBtn.addEventListener("click", () => {
         const next = document.documentElement.dataset.theme === "light" ? "dark" : "light";
-        localStorage.setItem("theme", next);
+        storage.set("theme", next);
         applyTheme(next);
       });
 
       applyLocale();
-      applyTheme(localStorage.getItem("theme") || "dark");
+      applyTheme(storage.get("theme") || "dark");
       renderFilterLabels();
       renderEmptyState();
     </script>

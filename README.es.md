@@ -91,7 +91,7 @@ Sin CDN, sin red, sin Subresource Integrity. Clona y ejecuta.
 
 ## Privacidad
 
-Todo funciona localmente en tu navegador. El visor no hace **ninguna** petición de red — sin CDN, sin analítica, sin fuentes remotas. Tus transcripciones se quedan en tu máquina.
+Todo funciona localmente en tu navegador. El visor en sí **no realiza peticiones de red automáticas** — sin CDN, sin analítica, sin fuentes remotas. Las imágenes Markdown incrustadas en las transcripciones se neutralizan: se muestran como texto inerte con la URL visible, pero nunca se descargan. Los enlaces externos (sólo `http(s)`) se abren en una nueva pestaña sólo al hacer clic, con `rel="noopener noreferrer nofollow"`. Tus transcripciones se quedan en tu máquina.
 
 ## Limitaciones conocidas
 

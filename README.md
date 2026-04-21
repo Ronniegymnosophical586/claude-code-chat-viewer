@@ -91,7 +91,7 @@ No CDN, no network, no Subresource Integrity dance. Clone and run.
 
 ## Privacy
 
-Everything runs locally in your browser. The viewer makes **zero** network requests — no CDN, no analytics, no remote fonts. Your transcripts stay on your machine.
+Everything runs locally in your browser. The viewer itself makes **no automatic network requests** — no CDN, no analytics, no remote fonts. Markdown images embedded in transcripts are neutralized: shown as inert text with their URL visible, but never fetched. External links (`http(s)` only) open in a new tab only when you click them, with `rel="noopener noreferrer nofollow"`. Your transcripts stay on your machine.
 
 ## Known limits
 
