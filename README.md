@@ -1,0 +1,100 @@
+<p align="center">
+  <b>English</b> ·
+  <a href="README.ru.md">Русский</a> ·
+  <a href="README.es.md">Español</a> ·
+  <a href="README.fr.md">Français</a> ·
+  <a href="README.zh-CN.md">中文</a> ·
+  <a href="README.ar.md">العربية</a>
+</p>
+
+# Claude Code Chat Viewer
+
+<p align="center">
+  <img src="screenshot.png" alt="Screenshot" width="900" />
+</p>
+
+HTML viewer for [Claude Code](https://claude.com/claude-code) session transcripts in JSONL format. Opens in a browser — no server, no build step, one vendored dependency. Works offline out of the box.
+
+## Why
+
+Claude Code writes every session to `~/.claude/projects/<project>/<session-uuid>.jsonl` — one line per record (user message, model reply, thinking, tool_use, tool_result, attachment, etc.). The raw file is unreadable; built-in commands like `/resume` display the conversation but don't let you export or inspect it post-mortem.
+
+This viewer turns such a `.jsonl` into a readable feed with color-coded roles, collapsible service blocks (thinking / tools / results), and filters.
+
+## What it shows
+
+- **user** (blue) — real user messages
+- **assistant** (green) — Claude's text replies
+- **thinking** (purple) — extended thinking, collapsed by default
+- **tool_use** (amber) — tool invocations with argument preview
+- **tool_result** (cyan / red for errors) — tool responses
+- **meta / task-note** (yellow) — system injections and `<task-notification>` from subagents
+- **system / attachment / ui-state** — service records (hidden by default)
+
+Each block is a separate row with a colored left bar. No messenger bubbles: this is a log, not a chat.
+
+## How to open
+
+1. Clone or download the repo (ZIP is fine). You need `index.html` + the `lib/` folder.
+2. Double-click `index.html` — opens in any modern browser.
+3. Click the file picker and pick a `.jsonl` transcript.
+
+Claude Code transcripts live at:
+
+```
+~/.claude/projects/<project-slug>/<session-uuid>.jsonl
+```
+
+where `<project-slug>` is your working directory with `/` replaced by `-`. Example: `/home/user/myproj` → `-home-user-myproj`.
+
+## Features
+
+- **Light / dark theme** — toggle button in the header, preference saved in `localStorage`.
+- **Six UI languages** — English, Русский, Español, Français, 中文, العربية. Arabic switches to RTL. Picker in the header, preference saved.
+- **Streaming parse** — `.jsonl` is read via `file.stream()` + `TextDecoderStream`, not loaded as a single string.
+- **Native virtualization** — `content-visibility: auto` on each record: the browser skips layout and paint for off-screen entries. Scales to thousands of records.
+- **Chunked rendering** — 500 records per chunk, "Load more" button for the rest.
+- **Filters** — five checkboxes (thinking / tools / results / system / ui-state), toggle categories via a single CSS class on the container (no DOM reflow).
+- **XSS-safe rendering** — every text block is HTML-escaped _before_ markdown parsing. No raw HTML from the transcript ever reaches the DOM, so no DOM sanitizer is needed at runtime.
+- **Size caps** — prose blocks truncated at 20 KB, service blocks at 5 KB (these usually carry 10-50 KB of noise nobody reads). Stringification is also bounded — big tool inputs don't get fully materialized before they're cut.
+- **`.json` fallback** — if the file isn't JSONL but a plain JSON array/object, it's parsed as a list of records.
+
+## Browser requirements
+
+- Chrome / Edge 85+
+- Safari 18+
+- Firefox 125+
+
+All required for `content-visibility: auto`. On older browsers the viewer works but scrolling large files will be noticeably slower.
+
+## Dependencies
+
+Only one, vendored locally in `lib/`:
+
+- [marked](https://github.com/markedjs/marked) — markdown → HTML (~35 KB)
+
+No CDN, no network, no Subresource Integrity dance. Clone and run.
+
+## Privacy
+
+Everything runs locally in your browser. The viewer makes **zero** network requests — no CDN, no analytics, no remote fonts. Your transcripts stay on your machine.
+
+## Known limits
+
+- Files over ~100 MB need indexed line-offset loading with window-based rendering (not implemented).
+- No Markdown/HTML export (the goal is viewing, not conversion).
+- No syntax highlighting in code blocks (intentional — kept dependencies minimal).
+
+## Development
+
+All code lives in one HTML file. Edit it directly — styles in `<style>`, logic in `<script>`, translations in the `I18N` object near the top of the script.
+
+Check JS syntax without a browser:
+
+```bash
+sed -n '/^<script>$/,/^<\/script>$/p' index.html | sed '1d;$d' | node --check /dev/stdin
+```
+
+## License
+
+[Unlicense](LICENSE) — public domain. Use it however you want, no attribution required.

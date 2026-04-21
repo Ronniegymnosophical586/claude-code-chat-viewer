@@ -1,0 +1,937 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Claude Code Chat Viewer</title>
+    <meta
+      name="description"
+      content="Offline HTML viewer for Claude Code JSONL session transcripts. Six UI languages, light/dark theme, no backend, no CDN."
+    />
+    <meta
+      name="keywords"
+      content="claude code, claude, anthropic, jsonl, transcript viewer, chat log, log viewer, single file html"
+    />
+    <meta property="og:title" content="Claude Code Chat Viewer" />
+    <meta
+      property="og:description"
+      content="Offline HTML viewer for Claude Code JSONL session transcripts."
+    />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary" />
+    <script src="lib/marked.min.js"></script>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #0f1419;
+        --bg-2: #171c23;
+        --bg-3: #202732;
+        --border: #2a3340;
+        --text: #d4d8de;
+        --muted: #7a8494;
+        --accent: #5fa8ff;
+        --c-user: #5fa8ff;
+        --c-assistant: #7ed39a;
+        --c-thinking: #b892e0;
+        --c-tool: #e0b467;
+        --c-result: #7ac4e0;
+        --c-meta: #d8b36a;
+        --c-system: #7a8494;
+        --c-error: #ff6b6b;
+        --pre-bg: #0b0f14;
+        --code-bg: rgba(120, 140, 170, 0.15);
+      }
+      :root[data-theme="light"] {
+        color-scheme: light;
+        --bg: #ffffff;
+        --bg-2: #f7f8fa;
+        --bg-3: #edf0f4;
+        --border: #d9dde3;
+        --text: #1b1f24;
+        --muted: #6b7280;
+        --accent: #2563eb;
+        --c-user: #2563eb;
+        --c-assistant: #16a34a;
+        --c-thinking: #7c3aed;
+        --c-tool: #b45309;
+        --c-result: #0891b2;
+        --c-meta: #ca8a04;
+        --c-system: #6b7280;
+        --c-error: #dc2626;
+        --pre-bg: #f3f4f7;
+        --code-bg: rgba(50, 60, 80, 0.08);
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font:
+          14px/1.55 -apple-system,
+          "Segoe UI",
+          Roboto,
+          Ubuntu,
+          sans-serif;
+      }
+      header {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        background: var(--bg-2);
+        border-bottom: 1px solid var(--border);
+        padding: 12px 20px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        align-items: center;
+      }
+      header input[type="file"],
+      header select,
+      header button {
+        color: var(--text);
+        background: var(--bg-3);
+        border: 1px solid var(--border);
+        padding: 6px 10px;
+        border-radius: 6px;
+        font: inherit;
+      }
+      header button {
+        cursor: pointer;
+      }
+      header button:hover,
+      header select:hover {
+        border-color: var(--accent);
+      }
+      .filters {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px 14px;
+        font-size: 13px;
+        color: var(--muted);
+      }
+      .filters label {
+        cursor: pointer;
+        user-select: none;
+        white-space: nowrap;
+      }
+      .filters input {
+        margin-inline-end: 4px;
+        vertical-align: middle;
+      }
+      .filters .base {
+        color: var(--muted);
+        opacity: 0.55;
+        font-family: ui-monospace, "SF Mono", Menlo, monospace;
+        font-size: 11px;
+      }
+      #stats {
+        flex-basis: 100%;
+        margin: 0;
+        font-size: 12px;
+        color: var(--muted);
+        overflow-wrap: anywhere;
+      }
+
+      main {
+        max-width: 960px;
+        margin: 0 auto;
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .e {
+        display: grid;
+        grid-template-columns: 3px 1fr;
+        gap: 12px;
+        padding: 6px 0;
+        min-width: 0;
+        content-visibility: auto;
+        contain-intrinsic-size: auto 80px;
+      }
+      .e::before {
+        content: "";
+        background: var(--bar);
+        border-radius: 2px;
+      }
+      .e > .body {
+        min-width: 0;
+        overflow-wrap: anywhere;
+        word-break: break-word;
+      }
+      .e .hdr {
+        font-size: 11px;
+        color: var(--muted);
+        margin-bottom: 4px;
+        font-family: ui-monospace, "SF Mono", Menlo, monospace;
+      }
+      .e .hdr .who {
+        color: var(--bar);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-inline-end: 8px;
+      }
+      .e .hdr .tag {
+        background: var(--bg-3);
+        padding: 1px 6px;
+        border-radius: 3px;
+        margin-inline-end: 6px;
+        font-size: 10px;
+      }
+
+      .e.user {
+        --bar: var(--c-user);
+      }
+      .e.assistant {
+        --bar: var(--c-assistant);
+      }
+      .e.thinking {
+        --bar: var(--c-thinking);
+      }
+      .e.tool-use {
+        --bar: var(--c-tool);
+      }
+      .e.tool-result {
+        --bar: var(--c-result);
+      }
+      .e.tool-result.error {
+        --bar: var(--c-error);
+      }
+      .e.meta {
+        --bar: var(--c-meta);
+      }
+      .e.system {
+        --bar: var(--c-system);
+      }
+      .e.ui {
+        --bar: var(--c-system);
+        opacity: 0.7;
+      }
+      .e.task-note {
+        --bar: var(--c-meta);
+      }
+
+      .prose {
+        font-size: 14px;
+      }
+      .prose p:first-child {
+        margin-top: 0;
+      }
+      .prose p:last-child {
+        margin-bottom: 0;
+      }
+      .prose pre {
+        background: var(--pre-bg);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        padding: 10px;
+        overflow-x: auto;
+        font-size: 12.5px;
+        line-height: 1.45;
+        white-space: pre;
+      }
+      .prose code {
+        background: var(--code-bg);
+        padding: 1px 5px;
+        border-radius: 3px;
+        font-size: 12.5px;
+        font-family: ui-monospace, "SF Mono", Menlo, monospace;
+      }
+      .prose pre code {
+        background: transparent;
+        padding: 0;
+      }
+      .prose table {
+        border-collapse: collapse;
+        margin: 8px 0;
+      }
+      .prose th,
+      .prose td {
+        border: 1px solid var(--border);
+        padding: 4px 10px;
+      }
+      .prose th {
+        background: var(--bg-3);
+      }
+      .prose blockquote {
+        border-inline-start: 3px solid var(--border);
+        margin: 8px 0;
+        padding-inline-start: 12px;
+        color: var(--muted);
+      }
+      .prose a {
+        color: var(--accent);
+      }
+
+      details.svc {
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        background: var(--bg-2);
+        min-width: 0;
+        overflow: hidden;
+      }
+      details.svc > summary {
+        padding: 4px 10px;
+        cursor: pointer;
+        font-size: 12px;
+        color: var(--muted);
+        user-select: none;
+        font-family: ui-monospace, "SF Mono", Menlo, monospace;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      details.svc[open] > summary {
+        border-bottom: 1px solid var(--border);
+      }
+      details.svc > .content {
+        padding: 8px 10px;
+      }
+      details.svc > .content > pre {
+        margin: 0;
+        background: var(--pre-bg);
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        padding: 8px;
+        overflow-x: auto;
+        font-size: 12px;
+        line-height: 1.45;
+        white-space: pre;
+      }
+      details.svc > .content > pre code {
+        background: transparent;
+        padding: 0;
+      }
+
+      .empty {
+        text-align: center;
+        color: var(--muted);
+        padding: 60px 20px;
+        font-size: 15px;
+      }
+      .kbd {
+        background: var(--bg-3);
+        padding: 2px 6px;
+        border-radius: 3px;
+        font-size: 11px;
+        font-family: ui-monospace, monospace;
+        border: 1px solid var(--border);
+      }
+      .load-more {
+        align-self: center;
+        background: var(--bg-3);
+        border: 1px solid var(--border);
+        color: var(--text);
+        padding: 8px 16px;
+        border-radius: 8px;
+        cursor: pointer;
+        font: inherit;
+        margin: 16px 0;
+      }
+      .load-more:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+      }
+
+      main.hide-thinking .e.thinking {
+        display: none;
+      }
+      main.hide-tools .e.tool-use {
+        display: none;
+      }
+      main.hide-results .e.tool-result {
+        display: none;
+      }
+      main.hide-system .e.system,
+      main.hide-system .e.meta,
+      main.hide-system .e.task-note {
+        display: none;
+      }
+      main.hide-ui .e.ui {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <input type="file" id="file" accept=".jsonl,.json" />
+      <div class="filters" id="filters">
+        <label
+          ><input type="checkbox" id="f-thinking" checked />
+          <span class="f-label" data-k="thinking"></span
+        ></label>
+        <label
+          ><input type="checkbox" id="f-tools" checked />
+          <span class="f-label" data-k="tools"></span
+        ></label>
+        <label
+          ><input type="checkbox" id="f-results" checked />
+          <span class="f-label" data-k="results"></span
+        ></label>
+        <label
+          ><input type="checkbox" id="f-system" /> <span class="f-label" data-k="system"></span
+        ></label>
+        <label><input type="checkbox" id="f-ui" /> <span class="f-label" data-k="ui"></span></label>
+      </div>
+      <select id="lang" title="Language">
+        <option value="en">English</option>
+        <option value="ru">Русский</option>
+        <option value="es">Español</option>
+        <option value="fr">Français</option>
+        <option value="zh">中文</option>
+        <option value="ar">العربية</option>
+      </select>
+      <button id="theme" title="Theme"></button>
+      <div id="stats"></div>
+    </header>
+    <main id="chat"><div class="empty" id="emptyState"></div></main>
+
+    <script>
+      // ===== i18n =====
+      const FILTER_BASENAMES = {
+        thinking: "thinking",
+        tools: "tools",
+        results: "results",
+        system: "system/meta",
+        ui: "ui-state",
+      };
+      const I18N = {
+        en: {
+          pick: "Pick a",
+          transcriptHint: "transcript to see the conversation.",
+          usuallyAt: "Usually at",
+          reading: "Reading…",
+          errRead: "Read error:",
+          emptyFile: "Empty file or not JSONL.",
+          records: "records",
+          loadMore: (n, l) => `Load more ${n} (${l} remaining)`,
+          loading: "Loading…",
+          cut: (n) => `cut ${n} chars`,
+          lines: (n) => `${n} lines`,
+          chars: (n) => `${n} chars`,
+          systemInject: "system inject",
+          filter: {
+            thinking: "Thinking",
+            tools: "Tools",
+            results: "Results",
+            system: "System / meta",
+            ui: "UI state",
+          },
+        },
+        ru: {
+          pick: "Выбери",
+          transcriptHint: "файл транскрипта, чтобы увидеть диалог.",
+          usuallyAt: "Обычно лежит в",
+          reading: "Читаю…",
+          errRead: "Ошибка чтения:",
+          emptyFile: "Файл пустой или не JSONL.",
+          records: "записей",
+          loadMore: (n, l) => `Показать ещё ${n} (осталось ${l})`,
+          loading: "Загружаю…",
+          cut: (n) => `обрезано ${n} символов`,
+          lines: (n) => `${n} строк`,
+          chars: (n) => `${n} симв`,
+          systemInject: "system inject",
+          filter: {
+            thinking: "Размышления",
+            tools: "Инструменты",
+            results: "Результаты",
+            system: "Система / мета",
+            ui: "UI-состояния",
+          },
+        },
+        es: {
+          pick: "Elige un",
+          transcriptHint: "archivo de transcripción para ver la conversación.",
+          usuallyAt: "Normalmente en",
+          reading: "Leyendo…",
+          errRead: "Error de lectura:",
+          emptyFile: "Archivo vacío o no es JSONL.",
+          records: "registros",
+          loadMore: (n, l) => `Mostrar ${n} más (${l} restantes)`,
+          loading: "Cargando…",
+          cut: (n) => `cortados ${n} car.`,
+          lines: (n) => `${n} líneas`,
+          chars: (n) => `${n} car.`,
+          systemInject: "inyección del sistema",
+          filter: {
+            thinking: "Pensamiento",
+            tools: "Herramientas",
+            results: "Resultados",
+            system: "Sistema / meta",
+            ui: "Estado UI",
+          },
+        },
+        fr: {
+          pick: "Choisis un fichier",
+          transcriptHint: "de transcription pour voir la conversation.",
+          usuallyAt: "Habituellement dans",
+          reading: "Lecture…",
+          errRead: "Erreur de lecture :",
+          emptyFile: "Fichier vide ou pas du JSONL.",
+          records: "enregistrements",
+          loadMore: (n, l) => `Afficher ${n} de plus (${l} restants)`,
+          loading: "Chargement…",
+          cut: (n) => `${n} car. coupés`,
+          lines: (n) => `${n} lignes`,
+          chars: (n) => `${n} car.`,
+          systemInject: "injection système",
+          filter: {
+            thinking: "Réflexion",
+            tools: "Outils",
+            results: "Résultats",
+            system: "Système / méta",
+            ui: "État UI",
+          },
+        },
+        zh: {
+          pick: "选择",
+          transcriptHint: "转录文件查看对话。",
+          usuallyAt: "通常位于",
+          reading: "读取中…",
+          errRead: "读取错误:",
+          emptyFile: "文件为空或不是 JSONL。",
+          records: "条记录",
+          loadMore: (n, l) => `加载更多 ${n} 条(剩余 ${l})`,
+          loading: "加载中…",
+          cut: (n) => `截断 ${n} 字`,
+          lines: (n) => `${n} 行`,
+          chars: (n) => `${n} 字`,
+          systemInject: "系统注入",
+          filter: {
+            thinking: "思考",
+            tools: "工具",
+            results: "结果",
+            system: "系统 / 元",
+            ui: "UI 状态",
+          },
+        },
+        ar: {
+          pick: "اختر ملف",
+          transcriptHint: "لعرض المحادثة.",
+          usuallyAt: "عادةً في",
+          reading: "جارٍ القراءة…",
+          errRead: "خطأ في القراءة:",
+          emptyFile: "ملف فارغ أو ليس JSONL.",
+          records: "سجلات",
+          loadMore: (n, l) => `عرض ${n} أكثر (${l} متبقٍ)`,
+          loading: "جارٍ التحميل…",
+          cut: (n) => `تم قصّ ${n} حرفًا`,
+          lines: (n) => `${n} سطرًا`,
+          chars: (n) => `${n} حرفًا`,
+          systemInject: "حقن النظام",
+          filter: {
+            thinking: "التفكير",
+            tools: "الأدوات",
+            results: "النتائج",
+            system: "النظام / الميتا",
+            ui: "حالة الواجهة",
+          },
+        },
+      };
+      const DATE_LOCALES = {
+        en: "en-US",
+        ru: "ru-RU",
+        es: "es-ES",
+        fr: "fr-FR",
+        zh: "zh-CN",
+        ar: "ar-EG",
+      };
+
+      const savedLang = localStorage.getItem("lang");
+      const browserLang = (navigator.language || "en").toLowerCase().split("-")[0];
+      let locale = savedLang || (I18N[browserLang] ? browserLang : "en");
+      const L = () => I18N[locale];
+
+      function applyLocale() {
+        document.documentElement.lang = locale;
+        document.documentElement.dir = locale === "ar" ? "rtl" : "ltr";
+      }
+
+      // ===== theme =====
+      function applyTheme(theme) {
+        if (theme === "light") document.documentElement.dataset.theme = "light";
+        else delete document.documentElement.dataset.theme;
+        themeBtn.textContent = theme === "light" ? "🌙" : "☀️";
+      }
+
+      // ===== DOM refs =====
+      const chatEl = document.getElementById("chat");
+      const statsEl = document.getElementById("stats");
+      const fileEl = document.getElementById("file");
+      const emptyEl = document.getElementById("emptyState");
+      const langSel = document.getElementById("lang");
+      const themeBtn = document.getElementById("theme");
+
+      const FILTERS = ["thinking", "tools", "results", "system", "ui"];
+      const fbox = Object.fromEntries(FILTERS.map((k) => [k, document.getElementById("f-" + k)]));
+      Object.values(fbox).forEach((el) => el.addEventListener("change", applyFilters));
+
+      marked.setOptions({ breaks: true, gfm: true });
+
+      // ===== truncation =====
+      const MAX_PROSE = 20_000;
+      const MAX_SVC = 5_000;
+      const cut = (s, max) =>
+        !s ? "" : s.length <= max ? s : s.slice(0, max) + `\n\n… [${L().cut(s.length - max)}]`;
+      const trunc = (s) => cut(s, MAX_PROSE);
+      const truncSvc = (s) => cut(s, MAX_SVC);
+
+      // ===== escaping & markdown =====
+      const esc = (s) =>
+        String(s).replace(
+          /[&<>"']/g,
+          (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c],
+        );
+      const fmtTime = (iso) =>
+        iso ? new Date(iso).toLocaleString(DATE_LOCALES[locale], { hour12: false }) : "";
+      // XSS-safe: pre-escape HTML entities so marked only sees plain text with markdown syntax.
+      // No raw HTML can reach innerHTML — no need for DOMPurify.
+      const md = (txt) => marked.parse(esc(txt || ""));
+      const preview = (s, n = 100) => {
+        const p = s.slice(0, n).replace(/\s+/g, " ").trim();
+        return esc(p) + (s.length > n ? "…" : "");
+      };
+
+      // ===== file loading =====
+      fileEl.addEventListener("change", async (e) => {
+        const f = e.target.files[0];
+        if (!f) return;
+        chatEl.innerHTML = `<div class="empty">${L().reading}</div>`;
+        try {
+          const rows = await parseFile(f);
+          render(rows, f.name);
+        } catch (err) {
+          chatEl.innerHTML = `<div class="empty">${L().errRead} ${esc(err.message)}</div>`;
+        }
+      });
+
+      async function parseFile(f) {
+        const name = f.name.toLowerCase();
+        if (name.endsWith(".json") && !name.endsWith(".jsonl")) {
+          const parsed = JSON.parse(await f.text());
+          if (Array.isArray(parsed)) return parsed;
+          if (parsed && typeof parsed === "object") return [parsed];
+          throw new Error("JSON must be an array or object");
+        }
+        const rows = [];
+        let bad = 0;
+        const reader = f.stream().pipeThrough(new TextDecoderStream()).getReader();
+        let buf = "";
+        for (;;) {
+          const { value, done } = await reader.read();
+          if (done) break;
+          buf += value;
+          let nl;
+          while ((nl = buf.indexOf("\n")) >= 0) {
+            const ln = buf.slice(0, nl);
+            buf = buf.slice(nl + 1);
+            if (!ln.trim()) continue;
+            try {
+              rows.push(JSON.parse(ln));
+            } catch {
+              bad++;
+            }
+          }
+        }
+        if (buf.trim()) {
+          try {
+            rows.push(JSON.parse(buf));
+          } catch {
+            bad++;
+          }
+        }
+        if (bad) console.warn(`${bad} bad lines skipped`);
+        return rows;
+      }
+
+      // ===== rendering =====
+      const CHUNK = 500;
+      let state = { rows: [], idx: 0, fname: "" };
+
+      function render(rows, fname) {
+        chatEl.innerHTML = "";
+        if (!rows.length) {
+          chatEl.innerHTML = `<div class="empty">${L().emptyFile}</div>`;
+          return;
+        }
+        let firstTs,
+          lastTs,
+          nUser = 0,
+          nAsst = 0;
+        for (const r of rows) {
+          if (r.timestamp) {
+            firstTs ??= r.timestamp;
+            lastTs = r.timestamp;
+          }
+          if (r.type === "user" && !r.isMeta && !r.toolUseResult) nUser++;
+          else if (r.type === "assistant") nAsst++;
+        }
+        statsEl.textContent = `${fname} · ${rows.length} ${L().records} · ${nUser}→ / ←${nAsst} · ${fmtTime(firstTs)} → ${fmtTime(lastTs)}`;
+        state = { rows, idx: 0, fname };
+        renderChunk();
+        applyFilters();
+      }
+
+      function renderChunk() {
+        chatEl.querySelector(".load-more")?.remove();
+        const end = Math.min(state.idx + CHUNK, state.rows.length);
+        const frag = document.createDocumentFragment();
+        for (let i = state.idx; i < end; i++) {
+          for (const el of rowToEntries(state.rows[i])) frag.appendChild(el);
+        }
+        chatEl.appendChild(frag);
+        state.idx = end;
+        if (state.idx < state.rows.length) {
+          const left = state.rows.length - state.idx;
+          const btn = document.createElement("button");
+          btn.className = "load-more";
+          btn.textContent = L().loadMore(Math.min(CHUNK, left), left);
+          btn.onclick = () => {
+            btn.disabled = true;
+            btn.textContent = L().loading;
+            requestAnimationFrame(renderChunk);
+          };
+          chatEl.appendChild(btn);
+        }
+      }
+
+      // One row may produce multiple entries (e.g. assistant with thinking + tool_use).
+      function rowToEntries(r) {
+        const t = r.type;
+        const ts = r.timestamp;
+
+        if (t === "user") return userEntries(r, ts);
+        if (t === "assistant") return assistantEntries(r, ts);
+        if (t === "system")
+          return [
+            entry(
+              "system",
+              "system",
+              ts,
+              r.subtype || "system",
+              `<div class="prose"><pre><code>${esc(strContent(r.content))}</code></pre></div>`,
+            ),
+          ];
+        if (t === "attachment")
+          return [
+            entry(
+              "ui",
+              "attachment",
+              ts,
+              "📎",
+              svcDetails(
+                "attachment",
+                "json",
+                stringifyBounded(r.attachment || r),
+                "language-json",
+              ),
+            ),
+          ];
+        // file-history-snapshot / custom-title / agent-name / last-prompt / permission-mode / queue-operation
+        return [entry("ui", t, ts, "·", "")];
+      }
+
+      function userEntries(r, ts) {
+        const c = r.message?.content;
+        const isMeta = r.isMeta === true;
+
+        if (typeof c === "string") {
+          if (isMeta) return [metaEntry(c, ts, L().systemInject)];
+          if (c.startsWith("<task-notification>")) return [taskNoteEntry(c, ts)];
+          return [proseEntry("user", "user", ts, c)];
+        }
+
+        if (!Array.isArray(c)) return [];
+        const out = [];
+        for (const b of c) {
+          if (b.type === "tool_result") {
+            out.push(toolResultEntry(b, ts));
+          } else if (b.type === "text" && (b.text || "").trim()) {
+            out.push(
+              isMeta
+                ? metaEntry(b.text, ts, L().systemInject)
+                : proseEntry("user", "user", ts, b.text),
+            );
+          }
+        }
+        return out;
+      }
+
+      function assistantEntries(r, ts) {
+        const c = r.message?.content;
+        if (typeof c === "string") {
+          return c.trim() ? [proseEntry("assistant", "claude", ts, c)] : [];
+        }
+        if (!Array.isArray(c)) return [];
+        const out = [];
+        for (const b of c) {
+          if (b.type === "text" && (b.text || "").trim()) {
+            out.push(proseEntry("assistant", "claude", ts, b.text));
+          } else if (b.type === "thinking" && (b.thinking || "").trim()) {
+            out.push(
+              entry(
+                "thinking",
+                "thinking",
+                ts,
+                "💭",
+                svcDetails("thinking", L().chars(b.thinking.length), b.thinking, null, true),
+              ),
+            );
+          } else if (b.type === "tool_use") {
+            out.push(toolUseEntry(b, ts));
+          }
+        }
+        return out;
+      }
+
+      function entry(kind, who, ts, tag, innerHTML) {
+        const el = document.createElement("div");
+        el.className = "e " + kind;
+        const tagHTML = tag ? `<span class="tag">${esc(tag)}</span>` : "";
+        const timeHTML = ts ? `<span>${fmtTime(ts)}</span>` : "";
+        el.innerHTML =
+          `<div class="body">` +
+          `<div class="hdr"><span class="who">${esc(who)}</span>${tagHTML}${timeHTML}</div>` +
+          innerHTML +
+          `</div>`;
+        return el;
+      }
+
+      function proseEntry(kind, who, ts, text) {
+        return entry(kind, who, ts, null, `<div class="prose">${md(trunc(text))}</div>`);
+      }
+
+      function metaEntry(text, ts, tag) {
+        const html = svcDetails(
+          "meta",
+          `${L().chars(text.length)} · ${preview(text, 80)}`,
+          text,
+          null,
+          true,
+        );
+        return entry("meta", "inject", ts, tag, html);
+      }
+
+      function taskNoteEntry(text, ts) {
+        // <task-notification> blob from subagents — shown as service, with markdown inside
+        const html = svcDetails("task", preview(text, 90), text, null, true);
+        return entry("task-note", "task", ts, "📣", html);
+      }
+
+      function toolUseEntry(b, ts) {
+        const name = b.name || "tool";
+        const inputStr = b.input ? stringifyBounded(b.input) : "";
+        const hint =
+          b.input && typeof b.input === "object"
+            ? Object.entries(b.input)
+                .slice(0, 2)
+                .map(([k, v]) => {
+                  const s = typeof v === "string" ? v : JSON.stringify(v);
+                  return `${k}=${s.length > 40 ? s.slice(0, 40) + "…" : s}`;
+                })
+                .join(" · ")
+            : "";
+        const summary = `🔧 ${esc(name)}${hint ? " · " + esc(hint) : ""}`;
+        const html = svcDetails("tool-use", summary, inputStr, "language-json");
+        return entry("tool-use", name, ts, "tool", html);
+      }
+
+      function toolResultEntry(b, ts) {
+        const raw = b.content;
+        let text = "";
+        if (typeof raw === "string") text = raw;
+        else if (Array.isArray(raw)) text = joinBounded(raw);
+        else text = stringifyBounded(raw);
+        const err = !!b.is_error;
+        const lineCount = (text.match(/\n/g)?.length ?? 0) + 1;
+        const summary = `${err ? "❌" : "📤"} result · ${L().lines(lineCount)} · ${L().chars(text.length)} · ${preview(text, 100)}`;
+        const html = svcDetails(err ? "tool-result-err" : "tool-result", summary, text);
+        return entry("tool-result" + (err ? " error" : ""), "result", ts, "result", html);
+      }
+
+      // summaryRaw is pre-built HTML; callers must escape untrusted pieces.
+      function svcDetails(cls, summaryRaw, bodyText, codeClass = null, asMarkdown = false) {
+        const shown = truncSvc(bodyText || "");
+        const body = asMarkdown
+          ? `<div class="prose">${md(shown)}</div>`
+          : `<pre><code${codeClass ? ` class="${codeClass}"` : ""}>${esc(shown)}</code></pre>`;
+        return `<details class="svc ${cls}"><summary>${summaryRaw}</summary><div class="content">${body}</div></details>`;
+      }
+
+      function strContent(x) {
+        return typeof x === "string" ? x : stringifyBounded(x);
+      }
+
+      // Cap per-string values during serialization — avoids materializing megabytes
+      // of JSON that truncSvc would throw away on the next line.
+      function stringifyBounded(v) {
+        return JSON.stringify(
+          v,
+          (_, val) =>
+            typeof val === "string" && val.length > MAX_SVC ? val.slice(0, MAX_SVC) + "…" : val,
+          2,
+        );
+      }
+
+      function joinBounded(arr) {
+        const parts = [];
+        let used = 0;
+        for (const x of arr) {
+          const s = x.text || stringifyBounded(x);
+          parts.push(s);
+          used += s.length + 1;
+          if (used > MAX_SVC * 2) break;
+        }
+        return parts.join("\n");
+      }
+
+      function applyFilters() {
+        for (const k of FILTERS) chatEl.classList.toggle("hide-" + k, !fbox[k].checked);
+      }
+
+      function renderEmptyState() {
+        emptyEl.innerHTML =
+          `${L().pick} <span class="kbd">.jsonl</span> ${L().transcriptHint}<br>` +
+          `${L().usuallyAt} <code>~/.claude/projects/&lt;project&gt;/&lt;session-uuid&gt;.jsonl</code>`;
+      }
+
+      function renderFilterLabels() {
+        const labels = L().filter;
+        for (const span of document.querySelectorAll(".f-label")) {
+          const k = span.dataset.k;
+          const local = labels[k];
+          const base = FILTER_BASENAMES[k];
+          // Skip "(basename)" suffix when it would just repeat the translated label.
+          span.textContent =
+            local.toLowerCase() === base.toLowerCase() ? local : `${local} (${base})`;
+        }
+      }
+
+      // ===== init & live language/theme switching =====
+      langSel.value = locale;
+      langSel.addEventListener("change", () => {
+        locale = langSel.value;
+        localStorage.setItem("lang", locale);
+        applyLocale();
+        renderFilterLabels();
+        if (state.rows.length) render(state.rows, state.fname);
+        else renderEmptyState();
+      });
+
+      themeBtn.addEventListener("click", () => {
+        const next = document.documentElement.dataset.theme === "light" ? "dark" : "light";
+        localStorage.setItem("theme", next);
+        applyTheme(next);
+      });
+
+      applyLocale();
+      applyTheme(localStorage.getItem("theme") || "dark");
+      renderFilterLabels();
+      renderEmptyState();
+    </script>
+  </body>
+</html>
