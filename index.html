@@ -374,6 +374,9 @@
       main.hide-ui .e.ui {
         display: none;
       }
+      main.reader-mode .e:not(.user):not(.assistant) {
+        display: none;
+      }
     </style>
   </head>
   <body>
@@ -397,6 +400,7 @@
         ></label>
         <label><input type="checkbox" id="f-ui" /> <span class="f-label" data-k="ui"></span></label>
       </div>
+      <label><input type="checkbox" id="reader-mode" /> <span id="reader-mode-label"></span></label>
       <select id="lang" title="Language">
         <option value="en">English</option>
         <option value="ru">Русский</option>
@@ -436,6 +440,7 @@
           lines: (n) => `${n} lines`,
           chars: (n) => `${n} chars`,
           systemInject: "system inject",
+          readerMode: "Reader mode",
           filter: {
             thinking: "Thinking",
             tools: "Tools",
@@ -460,6 +465,7 @@
           lines: (n) => `${n} строк`,
           chars: (n) => `${n} симв`,
           systemInject: "system inject",
+          readerMode: "Режим чтения",
           filter: {
             thinking: "Размышления",
             tools: "Инструменты",
@@ -484,6 +490,7 @@
           lines: (n) => `${n} líneas`,
           chars: (n) => `${n} car.`,
           systemInject: "inyección del sistema",
+          readerMode: "Modo lectura",
           filter: {
             thinking: "Pensamiento",
             tools: "Herramientas",
@@ -509,6 +516,7 @@
           lines: (n) => `${n} lignes`,
           chars: (n) => `${n} car.`,
           systemInject: "injection système",
+          readerMode: "Mode lecture",
           filter: {
             thinking: "Réflexion",
             tools: "Outils",
@@ -533,6 +541,7 @@
           lines: (n) => `${n} 行`,
           chars: (n) => `${n} 字`,
           systemInject: "系统注入",
+          readerMode: "阅读模式",
           filter: {
             thinking: "思考",
             tools: "工具",
@@ -557,6 +566,7 @@
           lines: (n) => `${n} سطرًا`,
           chars: (n) => `${n} حرفًا`,
           systemInject: "حقن النظام",
+          readerMode: "وضع القراءة",
           filter: {
             thinking: "التفكير",
             tools: "الأدوات",
@@ -619,6 +629,12 @@
       const FILTERS = ["thinking", "tools", "results", "system", "ui"];
       const fbox = Object.fromEntries(FILTERS.map((k) => [k, document.getElementById("f-" + k)]));
       Object.values(fbox).forEach((el) => el.addEventListener("change", applyFilters));
+      const readerBox = document.getElementById("reader-mode");
+      const readerLabel = document.getElementById("reader-mode-label");
+      readerBox.addEventListener("change", () => {
+        chatEl.classList.toggle("reader-mode", readerBox.checked);
+        storage.set("readerMode", readerBox.checked ? "1" : "");
+      });
 
       // Privacy: neutralize markdown images (no auto-fetch) and restrict link schemes.
       // Without this, [text](...) and ![alt](...) in transcripts would fetch remote
@@ -1031,6 +1047,7 @@
           span.textContent =
             local.toLowerCase() === base.toLowerCase() ? local : `${local} (${base})`;
         }
+        readerLabel.textContent = L().readerMode;
       }
 
       // ===== init & live language/theme switching =====
@@ -1052,6 +1069,9 @@
 
       applyLocale();
       applyTheme(storage.get("theme") || "dark");
+      const savedReader = storage.get("readerMode") === "1";
+      readerBox.checked = savedReader;
+      chatEl.classList.toggle("reader-mode", savedReader);
       renderFilterLabels();
       renderEmptyState();
     </script>
