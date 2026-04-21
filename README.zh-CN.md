@@ -1,4 +1,11 @@
 <p align="center">
+  <a href="https://hitmman55.github.io/claude-code-chat-viewer/">
+    <img src="https://img.shields.io/badge/▶-在线试用-2ea043?style=for-the-badge" alt="在线试用" />
+  </a>
+</p>
+<p align="center"><i>点击即用 — 无需安装、构建或注册。</i></p>
+
+<p align="center">
   <a href="README.md">English</a> ·
   <a href="README.ru.md">Русский</a> ·
   <a href="README.es.md">Español</a> ·
@@ -8,6 +15,13 @@
 </p>
 
 # Claude Code Chat Viewer
+
+<p align="center">
+  <img src="https://img.shields.io/badge/license-Unlicense-blue" alt="许可证:Unlicense" />
+  <img src="https://img.shields.io/badge/runtime%20deps-0-brightgreen" alt="零运行时依赖" />
+  <img src="https://img.shields.io/badge/offline-first-success" alt="离线可用" />
+  <img src="https://img.shields.io/badge/i18n-6%20languages-informational" alt="6 种界面语言" />
+</p>
 
 <p align="center">
   <img src="screenshot.png" alt="截图" width="900" />

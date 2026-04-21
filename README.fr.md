@@ -1,4 +1,11 @@
 <p align="center">
+  <a href="https://hitmman55.github.io/claude-code-chat-viewer/">
+    <img src="https://img.shields.io/badge/▶-DÉMO%20EN%20LIGNE-2ea043?style=for-the-badge" alt="Démo en ligne" />
+  </a>
+</p>
+<p align="center"><i>Un simple clic — aucune installation, aucun build, aucune inscription.</i></p>
+
+<p align="center">
   <a href="README.md">English</a> ·
   <a href="README.ru.md">Русский</a> ·
   <a href="README.es.md">Español</a> ·
@@ -8,6 +15,13 @@
 </p>
 
 # Claude Code Chat Viewer
+
+<p align="center">
+  <img src="https://img.shields.io/badge/license-Unlicense-blue" alt="Licence : Unlicense" />
+  <img src="https://img.shields.io/badge/runtime%20deps-0-brightgreen" alt="Zéro dépendance runtime" />
+  <img src="https://img.shields.io/badge/offline-first-success" alt="Fonctionne hors ligne" />
+  <img src="https://img.shields.io/badge/i18n-6%20languages-informational" alt="6 langues d'interface" />
+</p>
 
 <p align="center">
   <img src="screenshot.png" alt="Capture d'écran" width="900" />
