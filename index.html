@@ -618,6 +618,13 @@
         themeBtn.textContent = theme === "light" ? "🌙" : "☀️";
       }
 
+      // Resolve the effective theme: explicit user choice wins; otherwise follow OS.
+      function preferredTheme() {
+        const saved = storage.get("theme");
+        if (saved === "light" || saved === "dark") return saved;
+        return window.matchMedia?.("(prefers-color-scheme: light)").matches ? "light" : "dark";
+      }
+
       // ===== DOM refs =====
       const chatEl = document.getElementById("chat");
       const statsEl = document.getElementById("stats");
@@ -959,6 +966,28 @@
         return entry("task-note", "task", ts, "📣", html);
       }
 
+      // Known Claude Code tools get friendly label + emoji. Unknown (e.g. MCP tools
+      // prefixed with mcp__) fall back to raw name with a generic wrench.
+      const TOOL_LABELS = {
+        Read: "📖 Read file",
+        Write: "✏️ Write file",
+        Edit: "📝 Edit file",
+        MultiEdit: "📝 Multi-edit",
+        NotebookEdit: "📓 Notebook edit",
+        Bash: "🖥️ Shell",
+        Glob: "🔎 Find files",
+        Grep: "🔍 Search code",
+        WebFetch: "🌐 Fetch URL",
+        WebSearch: "🔍 Web search",
+        Task: "🤖 Subagent",
+        Agent: "🤖 Subagent",
+        TodoWrite: "☑️ Update todos",
+        Skill: "⭐ Skill",
+        SlashCommand: "⚡ Slash command",
+        ToolSearch: "🔎 Tool search",
+      };
+      const friendlyToolName = (name) => TOOL_LABELS[name] || `🔧 ${name}`;
+
       function toolUseEntry(b, ts) {
         const name = b.name || "tool";
         const inputStr = b.input ? stringifyBounded(b.input) : "";
@@ -972,7 +1001,7 @@
                 })
                 .join(" · ")
             : "";
-        const summary = `🔧 ${esc(name)}${hint ? " · " + esc(hint) : ""}`;
+        const summary = `${esc(friendlyToolName(name))}${hint ? " · " + esc(hint) : ""}`;
         const html = svcDetails("tool-use", summary, inputStr, "language-json");
         return entry("tool-use", name, ts, "tool", html);
       }
@@ -1068,7 +1097,11 @@
       });
 
       applyLocale();
-      applyTheme(storage.get("theme") || "dark");
+      applyTheme(preferredTheme());
+      // Track OS theme changes live, but only while the user hasn't made a manual choice.
+      window.matchMedia?.("(prefers-color-scheme: light)").addEventListener("change", (e) => {
+        if (!storage.get("theme")) applyTheme(e.matches ? "light" : "dark");
+      });
       const savedReader = storage.get("readerMode") === "1";
       readerBox.checked = savedReader;
       chatEl.classList.toggle("reader-mode", savedReader);
