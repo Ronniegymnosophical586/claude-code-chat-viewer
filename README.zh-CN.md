@@ -49,9 +49,15 @@ Claude Code 把每次会话写入 `~/.claude/projects/<project>/<session-uuid>.j
 
 ## 如何打开
 
-1. 克隆仓库或下载 ZIP。需要 `index.html` 和 `lib/` 目录。
-2. 双击 `index.html` — 在任意现代浏览器中打开。
-3. 使用文件选择器选择 `.jsonl` 记录。
+按喜好选择:
+
+**A. 下载单文件** — 最简单。从[最新 release](https://github.com/hitmman55/claude-code-chat-viewer/releases/latest) 下载独立 HTML,双击即可。一个文件,永久离线可用。
+
+**B. 克隆仓库** — 想改代码就选这个。需要 `index.html` 和 `lib/` 目录。
+
+**C. 在线使用** — 直接打开 <https://hitmman55.github.io/claude-code-chat-viewer/>。无需下载。
+
+打开后,点击文件选择器(或拖放文件,或点击「试用示例」按钮),选择一个 `.jsonl` 记录。
 
 Claude Code 的记录位于:
 

@@ -49,9 +49,15 @@ Chaque bloc est une ligne distincte avec une barre colorée à gauche. Pas de bu
 
 ## Comment ouvrir
 
-1. Clonez le dépôt ou téléchargez le ZIP. Il vous faut `index.html` et le dossier `lib/`.
-2. Double-cliquez sur `index.html` — il s'ouvre dans n'importe quel navigateur moderne.
-3. Utilisez le sélecteur de fichier et choisissez une transcription `.jsonl`.
+Choisissez ce qui vous convient :
+
+**A. Télécharger un seul fichier** — le plus simple. Prenez le HTML autonome depuis la [dernière release](https://github.com/hitmman55/claude-code-chat-viewer/releases/latest), double-cliquez dessus. Un fichier, fonctionne hors ligne pour toujours.
+
+**B. Cloner le dépôt** — si vous voulez modifier le code. Il vous faut `index.html` et le dossier `lib/`.
+
+**C. En ligne** — ouvrez <https://hitmman55.github.io/claude-code-chat-viewer/>. Rien à télécharger.
+
+Une fois ouvert, cliquez sur le sélecteur de fichier (ou déposez-en un, ou utilisez le bouton « Essayer avec l'exemple ») et choisissez une transcription `.jsonl`.
 
 Les transcriptions de Claude Code se trouvent dans :
 
