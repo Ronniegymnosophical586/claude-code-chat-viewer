@@ -49,9 +49,15 @@ Each block is a separate row with a colored left bar. No messenger bubbles: this
 
 ## How to open
 
-1. Clone or download the repo (ZIP is fine). You need `index.html` + the `lib/` folder.
-2. Double-click `index.html` — opens in any modern browser.
-3. Click the file picker and pick a `.jsonl` transcript.
+Pick whichever fits you:
+
+**A. Single-file download** — easiest. Grab the standalone HTML from the [latest release](https://github.com/hitmman55/claude-code-chat-viewer/releases/latest), double-click it. One file, works offline forever.
+
+**B. Clone the repo** — if you want to hack on it. You need `index.html` + the `lib/` folder.
+
+**C. Live online** — just use <https://hitmman55.github.io/claude-code-chat-viewer/>. Nothing to download.
+
+Once open, click the file picker (or drag-drop, or use the "Try with example" button) and pick a `.jsonl` transcript.
 
 Claude Code transcripts live at:
 
