@@ -336,6 +336,15 @@
         color: var(--accent);
       }
 
+      body.drag-active #chat {
+        outline: 3px dashed var(--accent);
+        outline-offset: -8px;
+        border-radius: 8px;
+      }
+      body.drag-active .empty {
+        color: var(--accent);
+      }
+
       main.hide-thinking .e.thinking {
         display: none;
       }
@@ -402,6 +411,8 @@
         en: {
           pick: "Pick a",
           transcriptHint: "transcript to see the conversation.",
+          dropHint: "or drag it here",
+          dropFolderHint: "Folder drops aren't supported yet — drop a single .jsonl file.",
           usuallyAt: "Usually at",
           reading: "Reading…",
           errRead: "Read error:",
@@ -424,6 +435,8 @@
         ru: {
           pick: "Выбери",
           transcriptHint: "файл транскрипта, чтобы увидеть диалог.",
+          dropHint: "или перетащи его сюда",
+          dropFolderHint: "Папки пока не поддерживаются — перетащи один .jsonl файл.",
           usuallyAt: "Обычно лежит в",
           reading: "Читаю…",
           errRead: "Ошибка чтения:",
@@ -446,6 +459,8 @@
         es: {
           pick: "Elige un",
           transcriptHint: "archivo de transcripción para ver la conversación.",
+          dropHint: "o arrástralo aquí",
+          dropFolderHint: "Las carpetas aún no se admiten — arrastra un solo archivo .jsonl.",
           usuallyAt: "Normalmente en",
           reading: "Leyendo…",
           errRead: "Error de lectura:",
@@ -468,6 +483,9 @@
         fr: {
           pick: "Choisis un fichier",
           transcriptHint: "de transcription pour voir la conversation.",
+          dropHint: "ou dépose-le ici",
+          dropFolderHint:
+            "Les dossiers ne sont pas encore pris en charge — dépose un seul fichier .jsonl.",
           usuallyAt: "Habituellement dans",
           reading: "Lecture…",
           errRead: "Erreur de lecture :",
@@ -490,6 +508,8 @@
         zh: {
           pick: "选择",
           transcriptHint: "转录文件查看对话。",
+          dropHint: "或拖到这里",
+          dropFolderHint: "暂不支持拖放文件夹 — 请拖放单个 .jsonl 文件。",
           usuallyAt: "通常位于",
           reading: "读取中…",
           errRead: "读取错误:",
@@ -512,6 +532,8 @@
         ar: {
           pick: "اختر ملف",
           transcriptHint: "لعرض المحادثة.",
+          dropHint: "أو اسحبه إلى هنا",
+          dropFolderHint: "لا يدعم سحب المجلدات بعد — أسقط ملف .jsonl واحدًا.",
           usuallyAt: "عادةً في",
           reading: "جارٍ القراءة…",
           errRead: "خطأ في القراءة:",
@@ -597,9 +619,7 @@
       };
 
       // ===== file loading =====
-      fileEl.addEventListener("change", async (e) => {
-        const f = e.target.files[0];
-        if (!f) return;
+      async function loadFile(f) {
         chatEl.innerHTML = `<div class="empty">${L().reading}</div>`;
         try {
           const rows = await parseFile(f);
@@ -607,6 +627,60 @@
         } catch (err) {
           chatEl.innerHTML = `<div class="empty">${L().errRead} ${esc(err.message)}</div>`;
         }
+      }
+
+      fileEl.addEventListener("change", (e) => {
+        const f = e.target.files[0];
+        if (f) loadFile(f);
+      });
+
+      // ===== drag & drop =====
+      // Enter-counter pattern: dragleave bubbles from children, so tracking a depth
+      // counter avoids flickering the active class when hovering over nested elements.
+      let dragDepth = 0;
+      const hasFiles = (e) => e.dataTransfer?.types?.includes("Files");
+
+      document.addEventListener("dragenter", (e) => {
+        if (!hasFiles(e)) return;
+        e.preventDefault();
+        dragDepth++;
+        document.body.classList.add("drag-active");
+      });
+
+      document.addEventListener("dragover", (e) => {
+        if (!hasFiles(e)) return;
+        e.preventDefault();
+        e.dataTransfer.dropEffect = "copy";
+      });
+
+      document.addEventListener("dragleave", (e) => {
+        if (!hasFiles(e)) return;
+        dragDepth--;
+        if (dragDepth <= 0) {
+          dragDepth = 0;
+          document.body.classList.remove("drag-active");
+        }
+      });
+
+      document.addEventListener("drop", async (e) => {
+        if (!hasFiles(e)) return;
+        e.preventDefault();
+        dragDepth = 0;
+        document.body.classList.remove("drag-active");
+
+        // Copy items synchronously — DataTransferItemList goes dead after the handler.
+        const items = Array.from(e.dataTransfer.items || []);
+        const hasFolder = items.some((it) => it.webkitGetAsEntry?.()?.isDirectory);
+        if (hasFolder) {
+          chatEl.innerHTML = `<div class="empty">${L().dropFolderHint}</div>`;
+          return;
+        }
+
+        const files = e.dataTransfer.files;
+        if (!files.length) return;
+        if (files.length > 1)
+          console.warn(`Multiple files dropped; using first (${files[0].name})`);
+        loadFile(files[0]);
       });
 
       async function parseFile(f) {
@@ -895,7 +969,8 @@
 
       function renderEmptyState() {
         emptyEl.innerHTML =
-          `${L().pick} <span class="kbd">.jsonl</span> ${L().transcriptHint}<br>` +
+          `${L().pick} <span class="kbd">.jsonl</span> ${L().transcriptHint} ` +
+          `<i>${L().dropHint}</i>.<br>` +
           `${L().usuallyAt} <code>~/.claude/projects/&lt;project&gt;/&lt;session-uuid&gt;.jsonl</code>`;
       }
 
