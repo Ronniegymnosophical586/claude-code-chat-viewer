@@ -72,7 +72,7 @@ où `<project-slug>` est votre répertoire de travail avec `/` remplacé par `-`
 ### Comment charger un fichier
 
 - **Sélecteur de fichier** — cliquez sur « Choisir un fichier » et sélectionnez un `.jsonl`.
-- **Glisser-déposer** — déposez un fichier n'importe où sur la page. Un contour pointillé signale la zone. Les dossiers et les glissers non-fichiers sont rejetés proprement.
+- **Glisser-déposer** — déposez un fichier n'importe où sur la page. Un contour pointillé signale la zone. Les dossiers et les éléments qui ne sont pas des fichiers sont rejetés proprement.
 - **Essayer avec l'exemple** — dans l'état initial (utilisation en ligne), un bouton apparaît qui charge un `demo.jsonl` intégré montrant tous les types de blocs.
 
 ### Confort de lecture

@@ -10,7 +10,7 @@
   <a href="README.ru.md">Русский</a> ·
   <b>Español</b> ·
   <a href="README.fr.md">Français</a> ·
-  <a href="README.zh-CN.md">中文</a>  ·
+  <a href="README.zh-CN.md">中文</a> ·
   <a href="README.ar.md">العربية</a>
 </p>
 
